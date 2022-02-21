@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { valid } = require('semver');
 const { User } = require('../../models');
 
 // GET /api/users
@@ -47,6 +48,27 @@ router.post('/', (req, res) => {
             console.log(err);
             res.status(500).json(err);
         });
+});
+
+router.post('/login', (req, res) => {
+    User.findOne({
+        where: {
+            email: req.body.email
+        }
+    }).then(dbUserData=> {
+        if (!dbUserData) {
+            res.status(400).json({ message: 'No user with that email address! '});
+            return;
+        }
+
+        // verify user
+        const validPasswword = dbUserData.checkPassword(req.body.password);
+        if (!validPasswword) {
+            res.status(400).json({ message: 'Incorrect password' });
+            return;
+        }
+        res.json({ user: dbUserData, message: 'You are now logged in!' });
+    });
 });
 
 // PUT /api/users/1
