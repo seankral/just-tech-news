@@ -1,6 +1,5 @@
 const router = require('express').Router();
-const { valid } = require('semver');
-const { User } = require('../../models');
+const { User, Post, Vote } = require('../../models');
 
 // GET /api/users
 router.get('/', (req, res) => {
@@ -15,9 +14,21 @@ router.get('/', (req, res) => {
         });
 });
 
-// GET /api/users/1
+// GET /api/users/:id
 router.get('/:id', (req, res) => {
     User.findOne({
+        include: [
+            {
+                model: Post,
+                attributes: ['id', 'title', 'post_url', 'created_at']
+            },
+            {
+                model: Post,
+                attributes: ['title'],
+                through: Vote,
+                as: 'voted_posts'
+            }
+        ],
         attributes: { exclude: ['password'] },
         where: {
             id: req.params.id
@@ -55,9 +66,9 @@ router.post('/login', (req, res) => {
         where: {
             email: req.body.email
         }
-    }).then(dbUserData=> {
+    }).then(dbUserData => {
         if (!dbUserData) {
-            res.status(400).json({ message: 'No user with that email address! '});
+            res.status(400).json({ message: 'No user with that email address! ' });
             return;
         }
 
